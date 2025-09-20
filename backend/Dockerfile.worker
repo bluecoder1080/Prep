@@ -1,0 +1,22 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# Install cron
+RUN apk add --no-cache dcron
+
+# Create cron job to run worker every hour
+RUN echo "0 * * * * cd /app && node dist/worker/techWorker.js" | crontab -
+
+# Start cron daemon
+CMD ["crond", "-f", "-d", "8"]

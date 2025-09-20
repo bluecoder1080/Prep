@@ -1,0 +1,131 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password123
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install backend dependencies
+      run: cd backend && npm ci
+    
+    - name: Run backend linter
+      run: cd backend && npm run lint
+    
+    - name: Run backend tests
+      run: cd backend && npm test
+      env:
+        NODE_ENV: test
+        MONGO_URI: mongodb://admin:password123@localhost:27017/careercompass-test?authSource=admin
+        JWT_SECRET: test-secret
+        JWT_REFRESH_SECRET: test-refresh-secret
+        USE_MOCK_AI: true
+        USE_MOCK_EMBEDDINGS: true
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install frontend dependencies
+      run: cd frontend && npm ci
+    
+    - name: Run frontend linter
+      run: cd frontend && npm run lint
+    
+    - name: Build frontend
+      run: cd frontend && npm run build
+
+  build-and-push:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        push: true
+        tags: ghcr.io/${{ github.repository }}/backend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        push: true
+        tags: ghcr.io/${{ github.repository }}/frontend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Deploy to Cloud Run (Backend)
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: career-compass-backend
+        image: ghcr.io/${{ github.repository }}/backend:latest
+        region: us-central1
+        env_vars: |
+          NODE_ENV=production
+          USE_MOCK_AI=true
+          USE_MOCK_EMBEDDINGS=true
+        secrets: |
+          MONGO_URI=projects/${{ secrets.GCP_PROJECT_ID }}/secrets/mongo-uri:latest
+          JWT_SECRET=projects/${{ secrets.GCP_PROJECT_ID }}/secrets/jwt-secret:latest
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}

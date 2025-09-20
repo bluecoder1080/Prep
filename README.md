@@ -2,7 +2,7 @@
 
 > **Personalized Career & Skills Advisor** - A dark, minimalistic full-stack prototype built with React, Node.js, and AI integration.
 
-[![CI/CD](https://github.com/your-org/CareerCompass/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/your-org/CareerCompass/actions)
+[![CI/CD](https://github.com/your-username/CareerCompass/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/your-username/CareerCompass/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🎯 Overview
@@ -43,18 +43,24 @@ CareerCompass is a production-ready prototype that provides personalized career 
 - Node.js 18+
 - MongoDB (local or Atlas)
 - Redis (optional)
+- Clerk account for authentication
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/your-org/CareerCompass.git
+git clone https://github.com/your-username/CareerCompass.git
 cd CareerCompass
 npm run install:all
 ```
 
 ### 2. Environment Setup
 ```bash
+# Backend environment
 cp backend/.env.example backend/.env
-# Edit backend/.env with your configuration
+
+# Frontend environment  
+cp frontend/.env.example frontend/.env
+
+# Edit both .env files with your configuration
 ```
 
 ### 3. Start Development
@@ -149,6 +155,8 @@ CLERK_SECRET_KEY=your-clerk-secret-key
 VITE_CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
 ```
 
+**Important**: Never commit your actual API keys to GitHub. Use environment variables and `.env.example` files.
+
 ## 🤖 AI Provider Configuration
 
 ### Mock Mode (Default)
@@ -190,7 +198,7 @@ docker build -t career-compass-frontend ./frontend
 # Run with environment variables
 docker run -p 5000:5000 \
   -e MONGO_URI=your-mongo-uri \
-  -e JWT_SECRET=your-secret \
+  -e CLERK_SECRET_KEY=your-secret \
   career-compass-backend
 ```
 
@@ -309,14 +317,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Documentation**: [RUN_LOCAL.md](./RUN_LOCAL.md)
 - **API Reference**: [Postman Collection](./postman/)
-- **Issues**: [GitHub Issues](https://github.com/your-org/CareerCompass/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/CareerCompass/discussions)
+- **Issues**: [GitHub Issues](https://github.com/your-username/CareerCompass/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/CareerCompass/discussions)
 
 ---
 
 **Built with ❤️ for hackathons and career guidance**
 
 *CareerCompass - Navigate your tech career with AI-powered insights*
-#   P r e p  
- #   P r e p  
- 
