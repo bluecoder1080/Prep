@@ -1,10 +1,13 @@
-FROM node:18-alpine
+# Multi-stage build for better optimization
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -12,8 +15,33 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
+# Production stage
+FROM node:18-alpine AS production
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm install --only=production && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Copy any other necessary files
+COPY --from=builder /app/src ./src
+
 # Create uploads and logs directories
 RUN mkdir -p uploads logs
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Change ownership of app directory
+RUN chown -R nodejs:nodejs /app
+USER nodejs
 
 # Expose port
 EXPOSE 5000

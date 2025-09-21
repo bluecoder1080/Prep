@@ -305,6 +305,10 @@ coverage/
 !*/render-build.sh
 !*/env.production.example
 
+# Allow package-lock.json files (needed for npm ci)
+!package-lock.json
+!*/package-lock.json
+
 # Local configuration files
 config/local.json
 config/development.json
