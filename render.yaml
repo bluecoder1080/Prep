@@ -1,0 +1,83 @@
+services:
+  # Backend API Service
+  - type: web
+    name: careercompass-backend
+    env: node
+    plan: starter
+    buildCommand: cd backend && npm ci && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        fromDatabase:
+          name: careercompass-mongo
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: careercompass-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: USE_MOCK_AI
+        value: "true"
+      - key: USE_MOCK_EMBEDDINGS
+        value: "true"
+
+  # Frontend Static Site
+  - type: web
+    name: careercompass-frontend
+    env: static
+    plan: starter
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: careercompass-backend
+          property: host
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+
+  # Background Worker Service
+  - type: worker
+    name: careercompass-worker
+    env: node
+    plan: starter
+    buildCommand: cd backend && npm ci && npm run build
+    startCommand: cd backend && npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        fromDatabase:
+          name: careercompass-mongo
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: careercompass-redis
+          property: connectionString
+      - key: USE_MOCK_AI
+        value: "true"
+      - key: USE_MOCK_EMBEDDINGS
+        value: "true"
+
+databases:
+  - name: careercompass-mongo
+    databaseName: careercompass
+    user: careercompass_user
+    plan: starter
+
+  - name: careercompass-redis
+    plan: starter

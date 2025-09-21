@@ -300,6 +300,11 @@ coverage/
 *.zip
 *.rar
 
+# Allow deployment configuration files
+!render.yaml
+!*/render-build.sh
+!*/env.production.example
+
 # Local configuration files
 config/local.json
 config/development.json
